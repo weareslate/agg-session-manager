@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/buzzub/agg-session-manager.git"
+    "url": "https://github.com/AggregateIndustries/agg-session-manager.git"
   },
   "keywords": [
     "session",
@@ -17,9 +17,9 @@
   "author": "Natalie Johnson, Peter Andrews, Rabia Mahmood",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/buzzub/agg-session-manager/issues"
+    "url": "https://github.com/AggregateIndustries/agg-session-manager/issues"
   },
-  "homepage": "https://github.com/buzzub/agg-session-manager",
+  "homepage": "https://github.com/AggregateIndustries/agg-session-manager",
   "dependencies": {
     "agg-mongo-dal": "^1.0.0",
     "cron": "^1.0.9",
