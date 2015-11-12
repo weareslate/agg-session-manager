@@ -1,0 +1,28 @@
+{
+  "name": "agg-session-manager",
+  "version": "0.0.1",
+  "description": "Session manager for Aggregate Industries",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/buzzub/agg-session-manager.git"
+  },
+  "keywords": [
+    "session",
+    "manager"
+  ],
+  "author": "Natalie Johnson, Peter Andrews, Rabia Mahmood",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/buzzub/agg-session-manager/issues"
+  },
+  "homepage": "https://github.com/buzzub/agg-session-manager",
+  "dependencies": {
+    "agg-mongo-dal": "^1.0.0",
+    "cron": "^1.0.9",
+    "moment": "^2.10.6"
+  }
+}
