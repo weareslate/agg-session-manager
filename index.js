@@ -1,6 +1,7 @@
 var sessionModel = require('./sessionModel');
 var sessionCron = require('./sessionCron');
 var moment = require('moment');
+var crypto = require('crypto');
 
 // create session
 exports.createSession = function(username, callback) {
@@ -25,54 +26,73 @@ exports.createSession = function(username, callback) {
 
 // create token
 function createToken (username) {
-	// TODO return hash
-	return username + (+new Date());
+	
+    var current_date = (new Date()).valueOf().toString();
+    var random = Math.random().toString();
+    var token = crypto.createHash('sha1').update(username + current_date + random).digest('hex');
+
+	return token;
 }
 
 // validate session
 exports.validateSession = function (token, callback) {
-	// body...
-	var sessionValid = false;
+
+	var response = {'sessionValid' : false};
+
 	console.log('Attempting to validate session with token: %s', token)
 
 	sessionModel.readByToken(token, function(err, res) {
 		if (err) {
 			return callback(err);
 		}
-		// TODO check res.list exists
-		for (var i = 0; i < res.list.length; i++) {
-			var record = res.list[i];
-			if (record.fields.token) {
-				var createdOn = moment(record.fields.createdTimestamp);
-				var now = moment();
-				// TODO envirnoment var
-				if (now.diff(createdOn, 'days') < 90) {
-					console.log('Found valid session');
-					sessionValid = true;
-				}
-			}
-		};
 
-		callback(null, sessionValid);
+		if (!res.list) {
+			return callback(new Error('No results list returned'));
+		}
+
+		if (res.list.length === 0) {
+			return callback(null, response);
+		}
+
+		var record = res.list[0];
+		if (record.fields.token) {
+			var createdOn = moment(record.fields.createdTimestamp);
+			var now = moment();
+			// TODO envirnoment var
+			if (now.diff(createdOn, 'days') < 3650) {
+				console.log('Found valid session');
+				response.sessionValid = true;
+				response.username = record.fields.username
+			} 
+		}
+
+		callback(null, response);
 	});
 }
 
 // delete session
 exports.deleteSession = function (body, callback) {
-	// body...
+
 	var token = body.token;
 	// sessionModel.deleteByUsername()
+	console.log('Removing session token:  %s', token);
 
 	sessionModel.readByToken(token, function(err, res) {
 		if (err) {
 			return callback(err);
 		}
-		// TODO check res.list exists
+
+		if (!res.list) {
+			return callback(new Error('No results list returned'))
+		}
+
+		// there should only be one item in the list array
 		var ids = []
 		for (var i = 0; i < res.list.length; i++) {
 			var record = res.list[i];
-			if (record.fields._id) {
-				ids.push(record.fields._id);
+			if (record.guid) {
+				// add the database id of the session to the ids array
+				ids.push(record.guid);
 			}
 		};
 
@@ -81,12 +101,19 @@ exports.deleteSession = function (body, callback) {
 				return callback(err);
 			}
 
-			callback(null, res);
+			if (!res || res.length === 0) {
+				return callback(null, {'msg': 'No sessions removed'})
+			}
+
+			callback(null, {
+				'status': 'success',
+				'msg': 'Session removed'
+			});
 		});
 	});
 }
 
-exports.checkSessions = function (argument) {
-	// body...
+exports.checkSessions = function (body, callback) {
+	// called by cron job to check for expired sessions
 	console.log('checking sessions...');
 }

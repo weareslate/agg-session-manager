@@ -1,6 +1,6 @@
 {
   "name": "agg-session-manager",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Session manager for Aggregate Industries",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,7 @@
   "dependencies": {
     "agg-mongo-dal": "^1.0.0",
     "cron": "^1.0.9",
+    "crypto": "0.0.3",
     "moment": "^2.10.6"
   }
 }
