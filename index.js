@@ -71,9 +71,8 @@ exports.validateSession = function (token, callback) {
 }
 
 // delete session
-exports.deleteSession = function (body, callback) {
+exports.deleteSession = function (token, callback) {
 
-	var token = body.token;
 	// sessionModel.deleteByUsername()
 	console.log('Removing session token:  %s', token);
 
