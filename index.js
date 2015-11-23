@@ -3,6 +3,8 @@ var sessionCron = require('./sessionCron');
 var moment = require('moment');
 var crypto = require('crypto');
 
+var error = {'status': 'error', 'message': 'There was an error' }
+
 // create session
 exports.createSession = function(username, callback) {
 
@@ -17,7 +19,8 @@ exports.createSession = function(username, callback) {
 	};
 	sessionModel.create(session, function(err, res) {
 		if (err) {
-			return callback(err);
+			error.message = err;
+			return callback(error);
 		}
 
 		callback(null, token);
@@ -40,11 +43,12 @@ exports.isLoggedInMiddleware = function (req, res, next) {
 	console.log('Middleware is checking for a session...')
 	exports.validateSession(req.body.token, function(err, msg) {
 		if (err) {
-			return res.json('There was an error');
+			return res.json(error);
 		}
 
 		if (!msg.sessionValid) {
-			return res.json('Not authorised');
+			error.message = 'Not authorised';
+			return res.json(error);
 		}
 
 		// append the username to the request so that it can be used elsewhere
@@ -57,17 +61,19 @@ exports.isLoggedInMiddleware = function (req, res, next) {
 // validate session
 exports.validateSession = function (token, callback) {
 
-	var response = {'sessionValid' : false};
+	var response = {'status': 'fail', 'data': {'sessionValid' : false} };
 
 	console.log('Attempting to validate session with token: %s', token)
 
 	sessionModel.readByToken(token, function(err, res) {
 		if (err) {
-			return callback(err);
+			error.message = err;
+			return callback(error);
 		}
 
 		if (!res.list) {
-			return callback(new Error('No results list returned'));
+			error.message = 'No results list returned';
+			return callback(error);
 		}
 
 		if (res.list.length === 0) {
@@ -81,7 +87,8 @@ exports.validateSession = function (token, callback) {
 			// TODO envirnoment var
 			if (now.diff(createdOn, 'days') < 3650) {
 				console.log('Found valid session');
-				response.sessionValid = true;
+				response.status = 'success';
+				response.data.sessionValid = true;
 				response.username = record.fields.username
 			} 
 		}
@@ -98,11 +105,13 @@ exports.deleteSession = function (token, callback) {
 
 	sessionModel.readByToken(token, function(err, res) {
 		if (err) {
-			return callback(err);
+			error.message = err;
+			return callback(error);
 		}
 
 		if (!res.list) {
-			return callback(new Error('No results list returned'))
+			error.message = 'No results list returned';
+			return callback(error);
 		}
 
 		// there should only be one item in the list array
@@ -117,16 +126,17 @@ exports.deleteSession = function (token, callback) {
 
 		sessionModel.deleteTokensByIds(ids, function(err, res) {
 			if (err) {
-				return callback(err);
+				error.message = err;
+				return callback(error);
 			}
 
 			if (!res || res.length === 0) {
-				return callback(null, {'msg': 'No sessions removed'})
+				return callback(null, {'status': 'fail', 'data': { 'message': 'No sessions removed' } });
 			}
 
 			callback(null, {
 				'status': 'success',
-				'msg': 'Session removed'
+				'data': { 'message': 'Session removed' }
 			});
 		});
 	});
