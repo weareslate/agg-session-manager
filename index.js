@@ -46,13 +46,13 @@ exports.isLoggedInMiddleware = function (req, res, next) {
 			return res.json(error);
 		}
 
-		if (!msg.sessionValid) {
+		if (!msg.data || !msg.data.sessionValid) {
 			error.message = 'Not authorised';
 			return res.json(error);
 		}
 
 		// append the username to the request so that it can be used elsewhere
-		req.username = msg.username;
+		req.username = msg.data.username;
 
 		next()
 	});
@@ -89,7 +89,7 @@ exports.validateSession = function (token, callback) {
 				console.log('Found valid session');
 				response.status = 'success';
 				response.data.sessionValid = true;
-				response.username = record.fields.username
+				response.data.username = record.fields.username
 			} 
 		}
 
