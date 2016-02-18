@@ -41,7 +41,8 @@ function createToken (username) {
 exports.isLoggedInMiddleware = function (req, res, next) {
 
 	console.log('Middleware is checking for a session...')
-	exports.validateSession(req.body.token, function(err, msg) {
+	var token = req.body.token ? req.body.token : req.query.token;
+	exports.validateSession(token, function(err, msg) {
 		if (err) {
 			return res.json(error);
 		}
