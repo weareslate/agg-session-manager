@@ -1,6 +1,6 @@
 {
   "name": "agg-session-manager",
-  "version": "0.2.0",
+  "version": "0.1.3",
   "description": "Session manager for Aggregate Industries",
   "main": "index.js",
   "scripts": {
