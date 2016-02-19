@@ -6,16 +6,26 @@ var crypto = require('crypto');
 var error = {'status': 'error', 'message': 'There was an error' }
 
 // create session
-exports.createSession = function(username, callback) {
+exports.createSession = function(username, data, callback) {
 
 	console.log('Creating session for user %s', username);
-	
+
+	// handle older implementation that might not send in data parameter
+    if (data) {
+    	if (typeof data === 'function') {
+	        callback = data;
+	        data = null;
+	    }
+	}
+
 	var token = createToken(username);
 
+	// data can contain extra session information (e.g. E1 companies for Mixer Cabin app)
 	var session = {
 		createdTimestamp: +new Date(),
 		username: username,
-		token: token
+		token: token,
+		data: data
 	};
 	sessionModel.create(session, function(err, res) {
 		if (err) {
@@ -54,6 +64,7 @@ exports.isLoggedInMiddleware = function (req, res, next) {
 
 		// append the username to the request so that it can be used elsewhere
 		req.username = msg.data.username;
+		req.sessionData = msg.data.sessionData;
 
 		next()
 	});
@@ -91,6 +102,7 @@ exports.validateSession = function (token, callback) {
 				response.status = 'success';
 				response.data.sessionValid = true;
 				response.data.username = record.fields.username
+				response.data.sessionData = record.fields.data
 			} 
 		}
 
