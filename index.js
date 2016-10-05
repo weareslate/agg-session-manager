@@ -4,6 +4,8 @@ var moment = require('moment');
 var crypto = require('crypto');
 
 var error = {'status': 'error', 'message': 'There was an error' }
+const SESSION_TIMEOUT = process.env.SESSION_TIMEOUT_SECONDS || 86400; // 1 day
+const SESSION_EXTEND = process.env.SESSION_EXTEND || false; // default is that sessions don't extend
 
 // create session
 exports.createSession = function(username, data, callback) {
@@ -57,6 +59,11 @@ exports.isLoggedInMiddleware = function (req, res, next) {
 			return res.json(error);
 		}
 
+		if (msg.data && msg.data.message === 'Session has expired') {
+			error.message = msg.data.message;
+			return res.json(error);
+		}
+
 		if (!msg.data || !msg.data.sessionValid) {
 			error.message = 'Not authorised';
 			return res.json(error);
@@ -93,18 +100,36 @@ exports.validateSession = function (token, callback) {
 		}
 
 		var record = res.list[0];
-		if (record.fields.token) {
-			var createdOn = moment(record.fields.createdTimestamp);
-			var now = moment();
-			// TODO envirnoment var
-			if (now.diff(createdOn, 'days') < 3650) {
-				console.log('Found valid session');
-				response.status = 'success';
-				response.data.sessionValid = true;
-				response.data.username = record.fields.username
-				response.data.sessionData = record.fields.data
-			} 
+		if (!record.fields.token) {
+			return callback(null, response);
 		}
+
+		var createdOn = moment(record.fields.createdTimestamp);
+		var now = moment();
+
+		// check if the session is still active
+		if (SESSION_TIMEOUT && now.diff(createdOn, 'seconds') > SESSION_TIMEOUT) {
+			console.log('Session has expired');
+			response.data.message = 'Session has expired';
+			return callback(null, response);
+		}
+
+		// extend session
+		if (SESSION_EXTEND) {
+			record.fields.createdTimestamp = +new Date();
+			sessionModel.update(record.guid, record.fields, function(err, res) {
+				if (err) {
+					return console.log(err);
+				}
+				console.log('Session extended until %s for token: %s', moment().add(SESSION_TIMEOUT, 'seconds'), token);
+			});
+		}
+
+		console.log('Found valid session');
+		response.status = 'success';
+		response.data.sessionValid = true;
+		response.data.username = record.fields.username
+		response.data.sessionData = record.fields.data
 
 		callback(null, response);
 	});
@@ -156,6 +181,53 @@ exports.deleteSession = function (token, callback) {
 }
 
 exports.checkSessions = function (body, callback) {
+	// simple logger function if no callback passed in
+	callback = callback || logger;
+
 	// called by cron job to check for expired sessions
-	console.log('checking sessions...');
+	console.log('Checking for expired sessions...');
+
+	// expired sessions will have been created at a time before now - SESSION_TIMEOUT
+	var timeNow = +new Date(),
+		createdTime = timeNow - (SESSION_TIMEOUT * 1000);
+
+	sessionModel.findExpiredSessions(createdTime, function(err, res) {
+		if (err) {
+			error.message = err;
+			return callback(error);
+		}
+
+		if (!res.list) {
+			error.message = 'No results list returned';
+			return callback(error);
+		}
+
+		// create an array of session IDs that will be deleted
+		var ids = []
+		for (var i = 0; i < res.list.length; i++) {
+			if (res.list[i].guid) {
+				// add the database id of the session to the ids array
+				ids.push(res.list[i].guid);
+			}
+		};
+		sessionModel.deleteTokensByIds(ids, function(err, res) {
+			if (err) {
+				error.message = err;
+				return callback(error);
+			}
+
+			if (!res || res.length === 0) {
+				return callback(null, 'No sessions removed');
+			}
+
+			callback(null, 'Removed ' + res.length + ' sessions');
+		});
+	});
 }
+
+var logger = function (err, msg) {
+	if (err) {
+		return console.log(err);
+	}
+	console.log(msg);
+};

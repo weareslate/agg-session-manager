@@ -17,3 +17,12 @@ exports.readByToken = function (token, callback) {
 exports.deleteTokensByIds = function (ids, callback) {
 	dal.removeByIds(collection, ids, callback);
 }
+
+exports.findExpiredSessions = function(createdTime, callback) {
+	var restrictions = {
+		lt: {
+			createdTimestamp: createdTime
+		}
+	};
+	dal.list(collection, restrictions, callback);
+};

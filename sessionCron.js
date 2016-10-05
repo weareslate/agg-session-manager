@@ -14,11 +14,15 @@ var CRON_TIMES = {
 
 
 exports.start = function() {
+    console.log('Starting cron jobs');
     exports.stop();
 
     var SESSION_CHECK = new CronJob(
         CRON_TIMES.FOURAM,
-        sessionManager.checkSessions,
+        function() {
+            // needed to wrap the function as it wouldn't call it without
+            sessionManager.checkSessions()
+        },
         null,
         true,
         null
