@@ -18,6 +18,10 @@ exports.deleteTokensByIds = function (ids, callback) {
 	dal.removeByIds(collection, ids, callback);
 }
 
+exports.update = function(guid, fields, callback) {
+    dal.update(collection, guid, fields, callback);
+}
+
 exports.findExpiredSessions = function(createdTime, callback) {
 	var restrictions = {
 		lt: {
