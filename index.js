@@ -34,7 +34,7 @@ var sessionMgr = {
 			SESSION_TIMEOUT = cfg.sessionTimeout;
 		}
 		if (cfg.sessionExtend) {
-			SESSION_TIMEOUT = cfg.sessionExtend;
+			SESSION_EXTEND = cfg.sessionExtend;
 		}
 
 	},
