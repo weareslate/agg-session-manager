@@ -1,40 +1,42 @@
 var dal = require('agg-mongo-dal');
-var collection = 'sessions';
 
-module.exports = {
-	init: function (cfg) {
-		if (cfg && cfg.collection) {
-			collection = cfg.collection
-		};
-	},
+module.exports = function(collection) {
+	var model = {};
 
-	create: function (session, callback) {
+	collection = collection || 'sessions';
+
+	// console.log('Session model is being used with collection: %s', collection);
+
+	model.create = function (session, callback) {
+		console.log('Creating a session in collection: %s', collection);
 		dal.create(collection, session, callback);
-	},
+	};
 
-	readByToken: function (token, callback) {
+	model.readByToken = function (token, callback) {
 		var restrictions = {
 			eq: {
 				token: token
 			}
 		}
 		dal.list(collection, restrictions, callback);
-	},
+	};
 
-	deleteTokensByIds: function (ids, callback) {
+	model.deleteTokensByIds = function (ids, callback) {
 		dal.removeByIds(collection, ids, callback);
-	},
+	};
 
-	update: function(guid, fields, callback) {
+	model.update = function(guid, fields, callback) {
 	    dal.update(collection, guid, fields, callback);
-	},
+	};
 
-	findExpiredSessions: function(createdTime, callback) {
+	model.findExpiredSessions = function(createdTime, callback) {
 		var restrictions = {
 			lt: {
 				createdTimestamp: createdTime
 			}
 		};
 		dal.list(collection, restrictions, callback);
-	}
+	};
+
+	return model;
 }

@@ -1,46 +1,29 @@
-var sessionModel = require('./sessionModel');
 var sessionCron = require('./sessionCron');
 var moment = require('moment');
 var crypto = require('crypto');
+var error = {'status': 'error', 'message': 'There was an error' };
 
-var error = {'status': 'error', 'message': 'There was an error' }
-var SESSION_TIMEOUT = process.env.SESSION_TIMEOUT_SECONDS || 86400; // 1 day
-var SESSION_EXTEND = process.env.SESSION_EXTEND || false; // default is that sessions don't extend
+var sessionMgr = function(cfg) {
+	var session = {},
+		collection = 'sessions',
+		sessionTimeout = 86400, // 1 day
+		sessionExtend = false,
+		sessionModel;
 
-// module.exports = function (cfg) {
-// 	if (!cfg) {
-// 		cfg = {
-// 			collection: 'sessions',
-// 			sessionTimeout: 86400,
-// 			sessionExtend: false
-// 		};
-// 	}
-// 	var config = cfg;
-	
-// 	var sessionModel = model(cfg);
-// 	return sessionMgr;
-// };
+	session.initialize = function (cfg) {
+		cfg = cfg || {};
 
-var sessionMgr = {
+		collection = cfg.collection || collection;
+		sessionTimeout = cfg.sessionTimeout || sessionTimeout;
+		sessionExtend = cfg.sessionExtend || sessionExtend;
 
-	config: function (cfg) {
-		if (!cfg) {
-			return
-		}
-		if (cfg.collection) {
-			sessionModel.init(cfg);
-		}
-		if (cfg.sessionTimeout) {
-			SESSION_TIMEOUT = cfg.sessionTimeout;
-		}
-		if (cfg.sessionExtend) {
-			SESSION_EXTEND = cfg.sessionExtend;
-		}
+		sessionModel = require('./sessionModel')(collection);
+	};
 
-	},
+	session.initialize(cfg);
 
 	// create session
-	createSession: function (username, data, callback) {
+	session.createSession = function (username, data, callback) {
 
 		console.log('Creating session for user %s', username);
 
@@ -61,6 +44,7 @@ var sessionMgr = {
 			token: token,
 			data: data
 		};
+		
 		sessionModel.create(session, function(err, res) {
 			if (err) {
 				error.message = err;
@@ -69,14 +53,14 @@ var sessionMgr = {
 
 			callback(null, token);
 		});
-	},
+	};
 
 	// check if logged in
-	isLoggedInMiddleware: function (req, res, next) {
+	session.isLoggedInMiddleware = function (req, res, next) {
 
 		console.log('Middleware is checking for a session...')
 		var token = req.body.token ? req.body.token : req.query.token;
-		sessionMgr.validateSession(token, function(err, msg) {
+		session.validateSession(token, function(err, msg) {
 			if (err) {
 				return res.json(error);
 			}
@@ -97,10 +81,10 @@ var sessionMgr = {
 
 			next()
 		});
-	},
+	};
 
 	// validate session
-	validateSession: function (token, callback) {
+	session.validateSession = function (token, callback) {
 
 		var response = {'status': 'fail', 'data': {'sessionValid' : false} };
 
@@ -130,20 +114,20 @@ var sessionMgr = {
 			var now = moment();
 
 			// check if the session is still active
-			if (SESSION_TIMEOUT && now.diff(createdOn, 'seconds') > SESSION_TIMEOUT) {
+			if (sessionTimeout && now.diff(createdOn, 'seconds') > sessionTimeout) {
 				console.log('Session has expired');
 				response.data.message = 'Session has expired';
 				return callback(null, response);
 			}
 
 			// extend session
-			if (SESSION_EXTEND) {
+			if (sessionExtend) {
 				record.fields.createdTimestamp = +new Date();
 				sessionModel.update(record.guid, record.fields, function(err, res) {
 					if (err) {
 						return console.log(err);
 					}
-					console.log('Session extended until %s for token: %s', moment().add(SESSION_TIMEOUT, 'seconds'), token);
+					console.log('Session extended until %s for token: %s', moment().add(sessionTimeout, 'seconds'), token);
 				});
 			}
 
@@ -155,10 +139,10 @@ var sessionMgr = {
 
 			callback(null, response);
 		});
-	},
+	};
 
 	// delete session
-	deleteSession: function (token, callback) {
+	session.deleteSession = function (token, callback) {
 
 		// sessionModel.deleteByUsername()
 		console.log('Removing session token:  %s', token);
@@ -200,9 +184,9 @@ var sessionMgr = {
 				});
 			});
 		});
-	},
+	};
 
-	checkSessions: function (body, callback) {
+	session.checkSessions = function (body, callback) {
 		// simple logger function if no callback passed in
 		callback = callback || logger;
 
@@ -211,7 +195,7 @@ var sessionMgr = {
 
 		// expired sessions will have been created at a time before now - SESSION_TIMEOUT
 		var timeNow = +new Date(),
-			createdTime = timeNow - (SESSION_TIMEOUT * 1000);
+			createdTime = timeNow - (sessionTimeout * 1000);
 
 		sessionModel.findExpiredSessions(createdTime, function(err, res) {
 			if (err) {
@@ -245,7 +229,9 @@ var sessionMgr = {
 				callback(null, 'Removed ' + res.length + ' sessions');
 			});
 		});
-	}
+	};
+
+	return session;
 }
 
 // create token
