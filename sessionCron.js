@@ -1,47 +1,43 @@
 var CronJob = require('cron').CronJob;
-var sessionManager = require('./index');
-var crons = [];
 
-// Time definitions
-var CRON_TIMES = {
-    // Run a job at 4AM. Other jobs don't run at this time
-    FOURAM: '00 04 * * *',
-    // Eleven PM
-    ONEAM: '00 01 * * *',
-    // Every minute
-    EVERYMINUTE: '* * * * *'
-};
+module.exports = function(session) {
+    var CRON_TIMES = {
+        FOURAM: '00 04 * * *',      // Run a job at 4AM. Other jobs don't run at this time
+        ONEAM: '00 01 * * *',       // Eleven PM
+        EVERYMINUTE: '* * * * *'    // Every minute
+    };
+    var crons = [];
 
+    console.log('Cron');
 
-exports.start = function() {
-    console.log('Starting cron jobs');
-    exports.stop();
+    function start() {
+        console.log('Starting cron jobs');
+        stop();
 
-    var SESSION_CHECK = new CronJob(
-        CRON_TIMES.FOURAM,
-        function() {
-            // needed to wrap the function as it wouldn't call it without
-            sessionManager.checkSessions()
-        },
-        null,
-        true,
-        null
-        );
+        var SESSION_CHECK = new CronJob(
+            CRON_TIMES.FOURAM,
+            function() {
+                // needed to wrap the function as it wouldn't call it without
+                session.checkSessions()
+            },
+            null,
+            true,
+            null
+            );
 
-    crons = [
-        SESSION_CHECK
-    ];
-};
+        crons = [
+            SESSION_CHECK
+        ];
+    }
 
+    function stop() {
+        crons.forEach(function(cron) {
+            cron.stop();
+        });
+    }
 
-exports.stop = function() {
-    crons.forEach(function(cron) {
-        cron.stop();
-    });
-};
-
-function serverRestart () {
-  process.exit();
+    return {
+        start: start,
+        stop: stop
+    };
 }
-
-exports.start();

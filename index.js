@@ -1,4 +1,3 @@
-var sessionCron = require('./sessionCron');
 var moment = require('moment');
 var crypto = require('crypto');
 var error = {'status': 'error', 'message': 'There was an error' };
@@ -8,7 +7,8 @@ var sessionMgr = function(cfg) {
 		collection = 'sessions',
 		sessionTimeout = 86400, // 1 day
 		sessionExtend = false,
-		sessionModel;
+		sessionModel,
+		sessionCron;
 
 	session.initialize = function (cfg) {
 		cfg = cfg || {};
@@ -18,6 +18,8 @@ var sessionMgr = function(cfg) {
 		sessionExtend = cfg.sessionExtend || sessionExtend;
 
 		sessionModel = require('./sessionModel')(collection);
+		sessionCron = require('./sessionCron')(session);
+		sessionCron.start();
 	};
 
 	session.initialize(cfg);
@@ -191,7 +193,7 @@ var sessionMgr = function(cfg) {
 		callback = callback || logger;
 
 		// called by cron job to check for expired sessions
-		console.log('Checking for expired sessions...');
+		console.log('Checking for expired sessions in %s', collection);
 
 		// expired sessions will have been created at a time before now - SESSION_TIMEOUT
 		var timeNow = +new Date(),
@@ -226,7 +228,7 @@ var sessionMgr = function(cfg) {
 					return callback(null, 'No sessions removed');
 				}
 
-				callback(null, 'Removed ' + res.length + ' sessions');
+				callback(null, 'Removed ' + res.length + ' sessions from ' + collection);
 			});
 		});
 	};
