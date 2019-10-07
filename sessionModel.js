@@ -9,6 +9,7 @@ module.exports = function(collection) {
 
 	model.create = function (session, callback) {
 		console.log('Creating a session in collection: %s', collection);
+		console.log('test');
 		dal.create(collection, session, callback);
 	};
 
