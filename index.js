@@ -37,6 +37,7 @@ var sessionMgr = function(cfg) {
 		    }
 		}
 
+		console.log('[agg-session-manager] creating token');
 		var token = createToken(username);
 
 		// data can contain extra session information (e.g. E1 companies for Mixer Cabin app)
@@ -46,13 +47,16 @@ var sessionMgr = function(cfg) {
 			token: token,
 			data: data
 		};
-		
+
+		console.log('[agg-session-manager] created session object, now creating session', session);
 		sessionModel.create(session, function(err, res) {
 			if (err) {
+				console.log('[agg-session-manager] error creating session');
 				error.message = err;
 				return callback(error);
 			}
 
+			console.log('[agg-session-manager] no errors');
 			callback(null, token);
 		});
 	};
@@ -238,7 +242,7 @@ var sessionMgr = function(cfg) {
 
 // create token
 var createToken = function(username) {
-	
+
     var current_date = (new Date()).valueOf().toString();
     var random = Math.random().toString();
     var token = crypto.createHash('sha1').update(username + current_date + random).digest('hex');
