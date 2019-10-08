@@ -97,6 +97,8 @@ var sessionMgr = function(cfg) {
 		console.log('Attempting to validate session with token: %s', token)
 
 		sessionModel.readByToken(token, function(err, res) {
+      console.log('[sessionModel.readByToken] got to callback', err, res);
+
 			if (err) {
 				error.message = err;
 				return callback(error);

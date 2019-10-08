@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/AggregateIndustries/agg-session-manager",
   "dependencies": {
-    "agg-mongo-dal": "1.0.2",
+    "agg-mongo-dal": "https://github.com/weareslate/agg-mongo-dal#slate-migration",
     "cron": "^1.0.9",
     "crypto": "0.0.3",
     "moment": "^2.10.6"
