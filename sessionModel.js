@@ -21,7 +21,7 @@ module.exports = function(collection) {
 		}
     console.log(dal);
     console.log(dal.hasOwnProperty('list'));
-    console.log('Calling dal.list', collection, restrictions, callaback);
+    console.log('Calling dal.list', collection, restrictions, callback);
 		dal.list(collection, restrictions, callback);
 	};
 
